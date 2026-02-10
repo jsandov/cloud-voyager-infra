@@ -12,7 +12,7 @@ permissions:
 
 env:
   TF_ROOT: infra
-  TOFU_VERSION: "1.6.x"
+  TOFU_VERSION: "1.11.0"
 
 jobs:
   tofu-plan:

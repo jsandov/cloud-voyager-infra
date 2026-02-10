@@ -15,6 +15,40 @@ resource "aws_vpc" "this" {
 }
 
 # -----------------------------------------------------------------------------
+# Default Resources (deny-all for security hardening)
+# -----------------------------------------------------------------------------
+
+resource "aws_default_security_group" "this" {
+  vpc_id = aws_vpc.this.id
+
+  tags = merge(var.tags, {
+    Name        = "${var.environment}-default-sg-restricted"
+    Environment = var.environment
+    ManagedBy   = "opentofu"
+  })
+}
+
+resource "aws_default_network_acl" "this" {
+  default_network_acl_id = aws_vpc.this.default_network_acl_id
+
+  tags = merge(var.tags, {
+    Name        = "${var.environment}-default-nacl-restricted"
+    Environment = var.environment
+    ManagedBy   = "opentofu"
+  })
+}
+
+resource "aws_default_route_table" "this" {
+  default_route_table_id = aws_vpc.this.default_route_table_id
+
+  tags = merge(var.tags, {
+    Name        = "${var.environment}-default-rt-restricted"
+    Environment = var.environment
+    ManagedBy   = "opentofu"
+  })
+}
+
+# -----------------------------------------------------------------------------
 # Internet Gateway
 # -----------------------------------------------------------------------------
 

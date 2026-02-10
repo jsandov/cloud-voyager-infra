@@ -71,6 +71,12 @@ variable "flow_log_retention_days" {
   }
 }
 
+variable "flow_log_kms_key_arn" {
+  description = "ARN of the KMS key for encrypting VPC Flow Logs. If null, uses AWS-managed encryption."
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "Additional tags to apply to all resources"
   type        = map(string)

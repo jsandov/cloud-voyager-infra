@@ -208,6 +208,7 @@ resource "aws_cloudwatch_log_group" "flow_logs" {
 
   name              = "/aws/vpc/${var.environment}-flow-logs"
   retention_in_days = var.flow_log_retention_days
+  kms_key_id        = var.flow_log_kms_key_arn
 
   tags = merge(var.tags, {
     Name        = "${var.environment}-vpc-flow-logs"
@@ -239,6 +240,7 @@ resource "aws_iam_role" "flow_logs" {
   })
 }
 
+# Scoped to the specific log group ARN — least-privilege per CLAUDE.md
 resource "aws_iam_role_policy" "flow_logs" {
   count = var.enable_flow_logs ? 1 : 0
 
@@ -249,14 +251,12 @@ resource "aws_iam_role_policy" "flow_logs" {
     Version = "2012-10-17"
     Statement = [{
       Action = [
-        "logs:CreateLogGroup",
         "logs:CreateLogStream",
         "logs:PutLogEvents",
-        "logs:DescribeLogGroups",
         "logs:DescribeLogStreams"
       ]
       Effect   = "Allow"
-      Resource = "*"
+      Resource = "${aws_cloudwatch_log_group.flow_logs[0].arn}:*"
     }]
   })
 }

@@ -57,24 +57,6 @@ flowchart TB
     PrivateRT --- PrivSub1
     PrivateRT --- PrivSub2
     PrivateRT --- PrivSub3
-
-    %% Styling
-    style Internet fill:#f9f,stroke:#333,stroke-width:2px
-    style VPC fill:#e8f4f8,stroke:#1a73e8,stroke-width:2px
-    style AZ1 fill:#fff3e0,stroke:#e65100,stroke-width:1px
-    style AZ2 fill:#fff3e0,stroke:#e65100,stroke-width:1px
-    style AZ3 fill:#fff3e0,stroke:#e65100,stroke-width:1px
-    style PubSub1 fill:#c8e6c9,stroke:#2e7d32
-    style PubSub2 fill:#c8e6c9,stroke:#2e7d32
-    style PubSub3 fill:#c8e6c9,stroke:#2e7d32
-    style PrivSub1 fill:#bbdefb,stroke:#1565c0
-    style PrivSub2 fill:#bbdefb,stroke:#1565c0
-    style PrivSub3 fill:#bbdefb,stroke:#1565c0
-    style IGW fill:#fff9c4,stroke:#f57f17
-    style NAT fill:#fff9c4,stroke:#f57f17
-    style EIP fill:#fff9c4,stroke:#f57f17
-    style PublicRT fill:#e8eaf6,stroke:#283593
-    style PrivateRT fill:#e8eaf6,stroke:#283593
 ```
 
 ## Resource Summary

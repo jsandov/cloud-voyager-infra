@@ -1,0 +1,9 @@
+# Example variable values for mcp-infra
+# Copy this file to terraform.tfvars and adjust values for your environment.
+#
+# Note: terraform.tfvars is gitignored and may contain sensitive values.
+
+aws_region         = "us-east-1"
+environment        = "dev"
+vpc_cidr           = "10.0.0.0/16"
+enable_nat_gateway = false

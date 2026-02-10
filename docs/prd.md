@@ -112,7 +112,7 @@ Create the initial infrastructure directory structure with a VPC module as the f
   - Tagging strategy: `Name`, `Environment`, `ManagedBy = "opentofu"`
 
 - **Provider and version constraints**
-  - Require OpenTofu `>= 1.6.0, < 2.0.0`
+  - Require OpenTofu `>= 1.11.0, < 2.0.0`
   - AWS provider pinned to a specific minor version range
   - AWS region configurable via variable
 
@@ -137,7 +137,7 @@ Automate infrastructure validation and cost estimation on pull requests. Every P
   - Path filter: only runs when `infra/**` files are changed
 
 - **OpenTofu Plan job**
-  - Set up OpenTofu v1.6.x via `opentofu/setup-opentofu@v1`
+  - Set up OpenTofu v1.11.0 via `opentofu/setup-opentofu@v1`
   - Configure AWS credentials from GitHub secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
   - Run `tofu init` in `infra/` directory
   - Run `tofu fmt -check -recursive` (enforces CLAUDE.md convention)

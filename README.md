@@ -36,7 +36,8 @@ cloud-voyager-infra/
 │   │   ├── api-gateway.md
 │   │   ├── kms.md
 │   │   ├── remote-state.md
-│   │   └── cloudwatch-alarms.md
+│   │   ├── cloudwatch-alarms.md
+│   │   └── vpc-endpoints.md
 │   └── infracost-setup.md           // CI cost estimation setup guide
 ├── infra/
 │   ├── modules/
@@ -46,7 +47,8 @@ cloud-voyager-infra/
 │   │   ├── api_gateway/             // API Gateway v2 (HTTP API)
 │   │   ├── kms/                     // Customer-managed encryption keys
 │   │   ├── remote_state/            // S3 + DynamoDB state backend
-│   │   └── cloudwatch_alarms/       // SNS + alarms for observability
+│   │   ├── cloudwatch_alarms/       // SNS + alarms for observability
+│   │   └── vpc_endpoints/           // S3 + DynamoDB Gateway endpoints
 │   ├── main.tf                      // Root config — wires modules
 │   ├── variables.tf                 // Root-level variables
 │   ├── outputs.tf                   // Root-level outputs
@@ -181,6 +183,20 @@ SNS topic with KMS encryption and configurable alarms for ALB errors, API Gatewa
 </td>
 <td width="50%" valign="top">
 
+### `[VPC ENDPOINTS]`
+**Private Network Paths**
+
+Gateway VPC Endpoints for S3 and DynamoDB. Routes traffic over the AWS backbone, eliminating NAT costs and public internet exposure.
+
+`FedRAMP: SC-7 · AC-4 · SC-8`
+
+[`> ACCESS DISC`](infra/modules/vpc_endpoints/README.md)
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
 ### `[CI/CD PIPELINE]`
 **Automated Sentinel**
 
@@ -189,6 +205,11 @@ GitHub Actions workflow: `tofu plan` + `tofu validate` + `tofu fmt` on every PR.
 `FedRAMP: SA-11 · CM-3 · SC-8`
 
 [`> ACCESS DISC`](.github/workflows/tofu-plan.yml)
+
+</td>
+<td width="50%" valign="top">
+
+&nbsp;
 
 </td>
 </tr>

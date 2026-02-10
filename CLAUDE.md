@@ -177,7 +177,8 @@ cloud-voyager-infra/
         ├── api_gateway/             # API Gateway v2 (HTTP API)
         ├── kms/                     # Customer-managed encryption keys
         ├── remote_state/            # S3 + DynamoDB state backend
-        └── cloudwatch_alarms/       # SNS + alarms for observability
+        ├── cloudwatch_alarms/       # SNS + alarms for observability
+        └── vpc_endpoints/           # S3 + DynamoDB Gateway endpoints
 ```
 
 ---

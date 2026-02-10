@@ -11,3 +11,4 @@ Per-module Mermaid diagrams for the cloud-voyager-infra modules.
 | KMS | [kms.md](kms.md) |
 | Remote State | [remote-state.md](remote-state.md) |
 | CloudWatch Alarms | [cloudwatch-alarms.md](cloudwatch-alarms.md) |
+| VPC Endpoints | [vpc-endpoints.md](vpc-endpoints.md) |

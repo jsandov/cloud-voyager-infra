@@ -34,8 +34,8 @@ override.tf.json
 # User-specific Claude Code settings (settings.json, etc.)
 .claude/
 
-# NOTE: CLAUDE.md is NOT ignored — it is a committed, shared project
-# conventions file that guides contributors and AI assistants.
+# Project conventions file — local only, not committed
+CLAUDE.md
 
 # =============================================================================
 # General

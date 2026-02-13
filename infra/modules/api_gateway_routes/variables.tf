@@ -58,6 +58,17 @@ variable "lambda_invoke_arn" {
   }
 }
 
+variable "route_prefix" {
+  description = "Required path prefix for all routes in this module instance (e.g., '/svc-a', '/billing'). Prevents route collisions between teams by enforcing namespace boundaries at plan time. The platform team assigns each service a unique prefix."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.route_prefix == null || can(regex("^/[a-z0-9/_-]+$", var.route_prefix))
+    error_message = "route_prefix must start with '/' and contain only lowercase letters, numbers, hyphens, underscores, and forward slashes."
+  }
+}
+
 variable "routes" {
   description = "Map of route key to route configuration. Keys are API Gateway route keys (e.g., 'POST /mcp', 'GET /health'). Each service team defines only their own routes."
   type = map(object({
@@ -77,12 +88,27 @@ variable "routes" {
     ])
     error_message = "Each route key must be in the format 'METHOD /path' (e.g., 'POST /mcp', 'GET /health')."
   }
+
+  # Enforce route_prefix namespace when set — prevents cross-team route collisions
+  validation {
+    condition = var.route_prefix == null || alltrue([
+      for key, _ in var.routes : can(regex("^[A-Z]+ ${var.route_prefix}", key))
+    ])
+    error_message = "All route paths must start with the route_prefix. This prevents route collisions between teams sharing the same API Gateway."
+  }
 }
 
 variable "lambda_qualifier" {
   description = "Lambda alias or version qualifier (e.g., 'prod', 'v2'). When set, the Lambda invoke permission is scoped to this qualifier, supporting alias-based deployment versioning."
   type        = string
   default     = null
+
+  # Ensure the invoke ARN matches the qualifier — prevents silent misconfiguration
+  # where the permission targets the alias but the integration points at $LATEST
+  validation {
+    condition     = var.lambda_qualifier == null || can(regex(":${var.lambda_qualifier}/invocations$", var.lambda_invoke_arn))
+    error_message = "When lambda_qualifier is set, lambda_invoke_arn must be the alias invoke ARN (ending with :QUALIFIER/invocations). Otherwise the integration targets $LATEST while the permission targets the alias."
+  }
 }
 
 variable "payload_format_version" {

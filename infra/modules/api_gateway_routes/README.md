@@ -179,6 +179,7 @@ module "billing_routes" {
   api_id            = data.terraform_remote_state.platform.outputs.api_id
   api_execution_arn = data.terraform_remote_state.platform.outputs.execution_arn
   service_name      = "billing"
+  route_prefix      = "/billing"  # enforces all routes start with /billing
 
   lambda_function_name = aws_lambda_function.billing.function_name
   lambda_invoke_arn    = aws_lambda_function.billing.invoke_arn
@@ -207,6 +208,26 @@ For multi-team safety, each service's `api_gateway_routes` instance **must** liv
 - Each team can apply independently without coordination
 
 The shared `api_gateway` module should live in the platform team's state, separate from all service states.
+
+## Route Collision Prevention
+
+When multiple teams share an API Gateway, two teams could accidentally define the same route key (e.g., both claim `POST /health`). AWS rejects the second apply with a `ConflictException`, but the error is confusing and there's no pre-apply guardrail.
+
+Set `route_prefix` to enforce namespace boundaries at plan time:
+
+```hcl
+# Platform team assigns each service a unique prefix
+module "billing_routes" {
+  route_prefix = "/billing"   # all routes must start with /billing
+  routes = {
+    "POST /billing/invoices" = {}  # OK
+    "GET /billing/invoices"  = {}  # OK
+    "POST /health"           = {}  # FAILS validation
+  }
+}
+```
+
+When `route_prefix` is set, `tofu plan` rejects any route that doesn't start with the assigned prefix. This catches collisions before they reach AWS.
 
 ## Per-Route Throttle Overrides
 
@@ -239,6 +260,7 @@ module "shared_api" {
 | `lambda_function_name` | `string` | --- | yes | Lambda function name |
 | `lambda_invoke_arn` | `string` | --- | yes | Lambda invoke ARN |
 | `lambda_qualifier` | `string` | `null` | no | Lambda alias or version qualifier (e.g., `prod`) |
+| `route_prefix` | `string` | `null` | no | Required path prefix for collision prevention (e.g., `/billing`) |
 | `routes` | `map(object)` | --- | yes | Route key to config map (see Usage) |
 | `payload_format_version` | `string` | `"2.0"` | no | Lambda integration payload format |
 | `tags` | `map(string)` | `{}` | no | Additional tags |

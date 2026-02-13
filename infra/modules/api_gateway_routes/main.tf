@@ -61,6 +61,7 @@ resource "aws_lambda_permission" "this" {
   statement_id  = "AllowAPIGW-${var.service_name}${replace(each.value, "/", "-")}"
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_function_name
+  qualifier     = var.lambda_qualifier
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${var.api_execution_arn}/*/*${each.value}"
 }

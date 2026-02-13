@@ -79,6 +79,12 @@ variable "routes" {
   }
 }
 
+variable "lambda_qualifier" {
+  description = "Lambda alias or version qualifier (e.g., 'prod', 'v2'). When set, the Lambda invoke permission is scoped to this qualifier, supporting alias-based deployment versioning."
+  type        = string
+  default     = null
+}
+
 variable "payload_format_version" {
   description = "Payload format version for the Lambda integration."
   type        = string

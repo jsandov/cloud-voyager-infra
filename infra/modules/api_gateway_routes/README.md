@@ -106,6 +106,30 @@ module "mcp_routes" {
 }
 ```
 
+### Backend Versioning with Lambda Aliases
+
+Use `lambda_qualifier` to scope the integration and invoke permission to a specific Lambda alias. This supports blue/green and canary deployment patterns.
+
+```hcl
+module "mcp_routes" {
+  source = "git::https://github.com/jsandov/cloud-voyager-infra.git//infra/modules/api_gateway_routes?ref=v1.0.0"
+
+  api_id            = module.shared_api.api_id
+  api_execution_arn = module.shared_api.execution_arn
+  service_name      = "mcp-server"
+
+  lambda_function_name = module.mcp_lambda.function_name
+  lambda_invoke_arn    = module.mcp_lambda.alias_invoke_arn  # alias ARN
+  lambda_qualifier     = "prod"                              # alias name
+
+  routes = {
+    "POST /mcp" = { authorization_type = "JWT", authorizer_id = module.shared_api.authorizer_id }
+  }
+}
+```
+
+Path-based API versioning is also supported natively — use different route keys (e.g., `"POST /v1/mcp"`, `"POST /v2/mcp"`) pointing at different module instances with different Lambdas.
+
 ### Multi-Team with Separate State Files
 
 Team Alpha manages their routes in `team-alpha.tfstate`:
@@ -185,6 +209,7 @@ module "shared_api" {
 | `service_name` | `string` | --- | yes | Unique service name (scopes permission statement IDs) |
 | `lambda_function_name` | `string` | --- | yes | Lambda function name |
 | `lambda_invoke_arn` | `string` | --- | yes | Lambda invoke ARN |
+| `lambda_qualifier` | `string` | `null` | no | Lambda alias or version qualifier (e.g., `prod`) |
 | `routes` | `map(object)` | --- | yes | Route key to config map (see Usage) |
 | `payload_format_version` | `string` | `"2.0"` | no | Lambda integration payload format |
 | `tags` | `map(string)` | `{}` | no | Additional tags |

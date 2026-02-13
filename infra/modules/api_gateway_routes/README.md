@@ -8,7 +8,7 @@ Per-service route isolation for a shared API Gateway v2. Each team uses their ow
 flowchart LR
     Client(["Client"])
 
-    subgraph Platform["Platform Team State<br/>(platform.tfstate)"]
+    subgraph Platform["Platform Team State (platform.tfstate)"]
         APIGW["API Gateway v2<br/><i>api_gateway module</i><br/>lifecycle: prevent_destroy"]
         Stage["$default Stage<br/>Throttling + Access Logs"]
         Authorizer["JWT Authorizer<br/>(optional)"]
@@ -22,18 +22,39 @@ flowchart LR
     end
 
     subgraph TeamBeta["Team Beta State (beta.tfstate)"]
+        direction LR
         IntB["Lambda Integration<br/><i>api_gateway_routes</i><br/>service: svc-b"]
         RouteB1["POST /svc-b"]
         RouteB2["GET /svc-b"]
-        LambdaB["Lambda B"]
+
+        subgraph AliasVersioning["Lambda Alias Versioning"]
+            LambdaBFn["Lambda B"]
+            AliasProd["Alias: prod<br/><i>lambda_qualifier</i>"]
+            AliasCanary["Alias: canary"]
+            V3["Version 3"]
+            V2["Version 2"]
+        end
+
+        LambdaBFn --- AliasProd
+        LambdaBFn --- AliasCanary
+        AliasProd -->|"95%"| V3
+        AliasCanary -->|"5%"| V2
     end
 
     subgraph MCPTeam["MCP Team State (mcp.tfstate)"]
-        IntM["Lambda Integration<br/><i>api_gateway_routes</i><br/>service: mcp-server"]
-        RouteM1["POST /mcp"]
-        RouteM2["GET /mcp"]
-        RouteM3["DELETE /mcp"]
-        LambdaM["Lambda MCP"]
+        direction LR
+
+        subgraph PathVersioning["Path-Based API Versioning"]
+            IntMv1["Integration v1<br/><i>api_gateway_routes</i><br/>service: mcp-v1"]
+            RouteM1v1["POST /v1/mcp"]
+            RouteM2v1["GET /v1/mcp"]
+            LambdaMv1["Lambda MCP v1"]
+
+            IntMv2["Integration v2<br/><i>api_gateway_routes</i><br/>service: mcp-v2"]
+            RouteM1v2["POST /v2/mcp"]
+            RouteM2v2["GET /v2/mcp"]
+            LambdaMv2["Lambda MCP v2"]
+        end
     end
 
     Client -->|"HTTPS"| APIGW
@@ -44,13 +65,21 @@ flowchart LR
     RouteA1 & RouteA2 --> IntA --> LambdaA
 
     Stage --> RouteB1 & RouteB2
-    RouteB1 & RouteB2 --> IntB --> LambdaB
+    RouteB1 & RouteB2 --> IntB --> LambdaBFn
 
-    Stage --> RouteM1 & RouteM2 & RouteM3
-    RouteM1 & RouteM2 & RouteM3 --> IntM --> LambdaM
+    Stage --> RouteM1v1 & RouteM2v1
+    RouteM1v1 & RouteM2v1 --> IntMv1 --> LambdaMv1
+
+    Stage --> RouteM1v2 & RouteM2v2
+    RouteM1v2 & RouteM2v2 --> IntMv2 --> LambdaMv2
 ```
 
 Each team's `tofu apply` only touches resources within their subgraph. The shared gateway has `lifecycle { prevent_destroy = true }` — no team can accidentally delete it.
+
+**Versioning strategies:**
+
+- **Lambda alias versioning** (Team Beta) — Set `lambda_qualifier = "prod"` to scope invoke permissions to a specific alias. Supports blue/green and weighted canary deployments via alias routing configuration.
+- **Path-based API versioning** (MCP Team) — Use separate module instances with different route prefixes (`/v1/mcp`, `/v2/mcp`), each pointing at a different Lambda. Both versions serve traffic simultaneously.
 
 ## Usage
 

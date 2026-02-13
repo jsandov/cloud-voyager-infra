@@ -49,6 +49,33 @@ variable "api_gateway_stage_name" {
 }
 
 # -----------------------------------------------------------------------------
+# Origin Failover (FedRAMP CP-7)
+# -----------------------------------------------------------------------------
+
+variable "enable_origin_failover" {
+  description = "Enable CloudFront origin failover to a secondary region API Gateway for multi-region resilience (FedRAMP CP-7)"
+  type        = bool
+  default     = false
+}
+
+variable "failover_api_gateway_endpoint" {
+  description = "The secondary region API Gateway endpoint URL for origin failover. Required when enable_origin_failover is true."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.failover_api_gateway_endpoint == null || can(regex("^https://", var.failover_api_gateway_endpoint))
+    error_message = "Failover API Gateway endpoint must start with https://."
+  }
+}
+
+variable "failover_status_codes" {
+  description = "HTTP status codes that trigger failover to the secondary origin"
+  type        = list(number)
+  default     = [500, 502, 503, 504]
+}
+
+# -----------------------------------------------------------------------------
 # CloudFront
 # -----------------------------------------------------------------------------
 

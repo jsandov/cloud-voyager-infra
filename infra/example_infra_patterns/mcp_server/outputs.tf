@@ -86,3 +86,18 @@ output "tenant_isolation_enabled" {
   description = "Whether Lambda tenant isolation mode is enabled"
   value       = var.enable_tenant_isolation
 }
+
+output "session_table_replica_regions" {
+  description = "List of regions where DynamoDB global table replicas are deployed (empty if disabled)"
+  value       = var.enable_global_table ? var.replica_regions : []
+}
+
+output "health_check_id" {
+  description = "ID of the Route53 health check (null if disabled)"
+  value       = try(aws_route53_health_check.api[0].id, null)
+}
+
+output "health_check_arn" {
+  description = "ARN of the Route53 health check (null if disabled)"
+  value       = try(aws_route53_health_check.api[0].arn, null)
+}

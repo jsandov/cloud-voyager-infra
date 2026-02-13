@@ -5,10 +5,16 @@
 # -----------------------------------------------------------------------------
 
 locals {
-  name_prefix = "${var.environment}-${var.name}"
-  origin_id   = "${local.name_prefix}-api-gateway"
+  name_prefix     = "${var.environment}-${var.name}"
+  origin_id       = "${local.name_prefix}-api-gateway"
+  failover_id     = "${local.name_prefix}-api-gateway-failover"
+  origin_group_id = "${local.name_prefix}-origin-group"
 
-  api_domain = replace(replace(var.api_gateway_endpoint, "https://", ""), "/", "")
+  api_domain          = replace(replace(var.api_gateway_endpoint, "https://", ""), "/", "")
+  failover_api_domain = var.enable_origin_failover ? replace(replace(var.failover_api_gateway_endpoint, "https://", ""), "/", "") : null
+
+  # When origin failover is enabled, the cache behavior targets the origin group
+  target_origin = var.enable_origin_failover ? local.origin_group_id : local.origin_id
 
   default_tags = merge(var.tags, {
     Environment = var.environment
@@ -41,10 +47,46 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
+  # Failover origin — secondary region API Gateway (FedRAMP CP-7)
+  dynamic "origin" {
+    for_each = var.enable_origin_failover ? [1] : []
+    content {
+      domain_name = local.failover_api_domain
+      origin_id   = local.failover_id
+
+      custom_origin_config {
+        http_port              = 80
+        https_port             = 443
+        origin_protocol_policy = "https-only"
+        origin_ssl_protocols   = ["TLSv1.2"]
+      }
+    }
+  }
+
+  # Origin group for automatic failover between primary and secondary regions
+  dynamic "origin_group" {
+    for_each = var.enable_origin_failover ? [1] : []
+    content {
+      origin_id = local.origin_group_id
+
+      failover_criteria {
+        status_codes = var.failover_status_codes
+      }
+
+      member {
+        origin_id = local.origin_id
+      }
+
+      member {
+        origin_id = local.failover_id
+      }
+    }
+  }
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = local.origin_id
+    target_origin_id = local.target_origin
     compress         = true
 
     viewer_protocol_policy = "redirect-to-https"

@@ -4,20 +4,53 @@ Per-service route isolation for a shared API Gateway v2. Each team uses their ow
 
 ## Architecture
 
-```text
-Shared API Gateway (api_gateway module — platform team state)
-  │
-  ├── api_gateway_routes: Service A (team-alpha state)
-  │     └── Integration + Routes (POST /svc-a, GET /svc-a) → Lambda A
-  │
-  ├── api_gateway_routes: Service B (team-beta state)
-  │     └── Integration + Routes (POST /svc-b, GET /svc-b) → Lambda B
-  │
-  └── api_gateway_routes: MCP Server (mcp-team state)
-        └── Integration + Routes (POST /mcp, GET /mcp, DELETE /mcp) → Lambda MCP
+```mermaid
+flowchart LR
+    Client(["Client"])
+
+    subgraph Platform["Platform Team State<br/>(platform.tfstate)"]
+        APIGW["API Gateway v2<br/><i>api_gateway module</i><br/>lifecycle: prevent_destroy"]
+        Stage["$default Stage<br/>Throttling + Access Logs"]
+        Authorizer["JWT Authorizer<br/>(optional)"]
+    end
+
+    subgraph TeamAlpha["Team Alpha State (alpha.tfstate)"]
+        IntA["Lambda Integration<br/><i>api_gateway_routes</i><br/>service: svc-a"]
+        RouteA1["POST /svc-a"]
+        RouteA2["GET /svc-a"]
+        LambdaA["Lambda A"]
+    end
+
+    subgraph TeamBeta["Team Beta State (beta.tfstate)"]
+        IntB["Lambda Integration<br/><i>api_gateway_routes</i><br/>service: svc-b"]
+        RouteB1["POST /svc-b"]
+        RouteB2["GET /svc-b"]
+        LambdaB["Lambda B"]
+    end
+
+    subgraph MCPTeam["MCP Team State (mcp.tfstate)"]
+        IntM["Lambda Integration<br/><i>api_gateway_routes</i><br/>service: mcp-server"]
+        RouteM1["POST /mcp"]
+        RouteM2["GET /mcp"]
+        RouteM3["DELETE /mcp"]
+        LambdaM["Lambda MCP"]
+    end
+
+    Client -->|"HTTPS"| APIGW
+    APIGW --- Stage
+    Authorizer -.->|"validates JWT"| Stage
+
+    Stage --> RouteA1 & RouteA2
+    RouteA1 & RouteA2 --> IntA --> LambdaA
+
+    Stage --> RouteB1 & RouteB2
+    RouteB1 & RouteB2 --> IntB --> LambdaB
+
+    Stage --> RouteM1 & RouteM2 & RouteM3
+    RouteM1 & RouteM2 & RouteM3 --> IntM --> LambdaM
 ```
 
-Each team's `tofu apply` only touches their own routes. The shared gateway has `lifecycle { prevent_destroy = true }`.
+Each team's `tofu apply` only touches resources within their subgraph. The shared gateway has `lifecycle { prevent_destroy = true }` — no team can accidentally delete it.
 
 ## Usage
 

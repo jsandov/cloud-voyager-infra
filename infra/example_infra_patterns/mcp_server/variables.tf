@@ -355,3 +355,60 @@ variable "canary_weight" {
     error_message = "Canary weight must be between 0.0 and 1.0."
   }
 }
+
+# ---------------------------------------------------------------------------
+# Multi-Region Failover (FedRAMP CP-7)
+# ---------------------------------------------------------------------------
+
+variable "enable_global_table" {
+  description = "Enable DynamoDB global table replicas for multi-region session failover. Requires enable_session_table = true."
+  type        = bool
+  default     = false
+}
+
+variable "replica_regions" {
+  description = "List of AWS regions for DynamoDB global table replicas (e.g., ['us-west-2'])"
+  type        = list(string)
+  default     = []
+}
+
+variable "replica_kms_key_arns" {
+  description = "Map of region to KMS key ARN for encrypting DynamoDB replicas. Keys must match replica_regions entries."
+  type        = map(string)
+  default     = {}
+}
+
+variable "enable_ecr_replication" {
+  description = "Enable cross-region ECR image replication for multi-region deployments"
+  type        = bool
+  default     = false
+}
+
+variable "ecr_replication_regions" {
+  description = "List of AWS regions to replicate ECR images to"
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_health_check" {
+  description = "Enable Route53 health check for the MCP API endpoint (used for DNS failover)"
+  type        = bool
+  default     = false
+}
+
+variable "health_check_path" {
+  description = "Path for the Route53 health check request"
+  type        = string
+  default     = "/mcp"
+}
+
+variable "health_check_failure_threshold" {
+  description = "Number of consecutive health check failures before Route53 considers the endpoint unhealthy"
+  type        = number
+  default     = 3
+
+  validation {
+    condition     = var.health_check_failure_threshold >= 1 && var.health_check_failure_threshold <= 10
+    error_message = "Health check failure threshold must be between 1 and 10."
+  }
+}

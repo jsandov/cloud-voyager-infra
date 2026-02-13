@@ -111,3 +111,18 @@ output "mtls_domain_hosted_zone_id" {
   description = "The Route53 hosted zone ID for the mTLS custom domain (null if mTLS is disabled)"
   value       = try(aws_apigatewayv2_domain_name.mtls[0].domain_name_configuration[0].hosted_zone_id, null)
 }
+
+output "session_table_replica_regions" {
+  description = "List of regions where DynamoDB global table replicas are deployed (empty if disabled)"
+  value       = var.enable_global_table ? var.replica_regions : []
+}
+
+output "health_check_id" {
+  description = "ID of the Route53 health check (null if disabled)"
+  value       = try(aws_route53_health_check.api[0].id, null)
+}
+
+output "health_check_arn" {
+  description = "ARN of the Route53 health check (null if disabled)"
+  value       = try(aws_route53_health_check.api[0].arn, null)
+}

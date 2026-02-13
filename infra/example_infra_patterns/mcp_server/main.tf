@@ -592,6 +592,16 @@ resource "aws_dynamodb_table" "sessions" {
     kms_key_arn = var.kms_key_arn
   }
 
+  # Global table replicas for multi-region failover (FedRAMP CP-7)
+  dynamic "replica" {
+    for_each = var.enable_global_table ? var.replica_regions : []
+    content {
+      region_name    = replica.value
+      kms_key_arn    = lookup(var.replica_kms_key_arns, replica.value, null)
+      propagate_tags = true
+    }
+  }
+
   deletion_protection_enabled = var.environment == "prod"
 
   tags = local.tags
@@ -599,6 +609,72 @@ resource "aws_dynamodb_table" "sessions" {
   lifecycle {
     prevent_destroy = true
   }
+}
+
+# ---------------------------------------------------------------------------
+# ECR Cross-Region Replication (conditional, FedRAMP CP-7)
+# ---------------------------------------------------------------------------
+
+resource "aws_ecr_replication_configuration" "this" {
+  count = var.enable_ecr_replication && var.enable_ecr_repository ? 1 : 0
+
+  replication_configuration {
+    rule {
+      dynamic "destination" {
+        for_each = var.ecr_replication_regions
+        content {
+          region      = destination.value
+          registry_id = data.aws_caller_identity.current.account_id
+        }
+      }
+    }
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Route53 Health Check (conditional, FedRAMP CP-7)
+# ---------------------------------------------------------------------------
+
+resource "aws_route53_health_check" "api" {
+  count = var.enable_health_check ? 1 : 0
+
+  fqdn              = replace(replace(aws_apigatewayv2_api.this.api_endpoint, "https://", ""), "/", "")
+  port              = 443
+  type              = "HTTPS"
+  resource_path     = var.health_check_path
+  failure_threshold = var.health_check_failure_threshold
+  request_interval  = 30
+  measure_latency   = true
+
+  tags = merge(local.tags, {
+    Name    = "${local.name_prefix}-mcp-health-check"
+    FedRAMP = "CP-7"
+  })
+}
+
+resource "aws_cloudwatch_metric_alarm" "health_check" {
+  count = var.enable_health_check ? 1 : 0
+
+  alarm_name          = "${local.name_prefix}-mcp-health-check"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "HealthCheckStatus"
+  namespace           = "AWS/Route53"
+  period              = 60
+  statistic           = "Minimum"
+  threshold           = 1
+  alarm_description   = "Route53 health check failed for MCP API endpoint (FedRAMP CP-7)"
+  treat_missing_data  = "breaching"
+  actions_enabled     = var.alarm_actions_enabled
+
+  dimensions = {
+    HealthCheckId = aws_route53_health_check.api[0].id
+  }
+
+  alarm_actions = compact([local.alarm_sns_topic_arn])
+  ok_actions    = compact([local.alarm_sns_topic_arn])
+
+  tags = merge(local.tags, { FedRAMP = "CP-7" })
 }
 
 # ---------------------------------------------------------------------------

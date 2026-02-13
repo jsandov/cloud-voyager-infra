@@ -86,3 +86,18 @@ output "tenant_isolation_enabled" {
   description = "Whether Lambda tenant isolation mode is enabled"
   value       = var.enable_tenant_isolation
 }
+
+output "mtls_domain_name" {
+  description = "The custom domain name configured for mTLS (null if mTLS is disabled)"
+  value       = try(aws_apigatewayv2_domain_name.mtls[0].domain_name, null)
+}
+
+output "mtls_domain_target" {
+  description = "The target domain name for DNS CNAME/alias records (null if mTLS is disabled)"
+  value       = try(aws_apigatewayv2_domain_name.mtls[0].domain_name_configuration[0].target_domain_name, null)
+}
+
+output "mtls_domain_hosted_zone_id" {
+  description = "The Route53 hosted zone ID for the mTLS custom domain (null if mTLS is disabled)"
+  value       = try(aws_apigatewayv2_domain_name.mtls[0].domain_name_configuration[0].hosted_zone_id, null)
+}
